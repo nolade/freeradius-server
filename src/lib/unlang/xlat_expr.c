@@ -2664,6 +2664,14 @@ static fr_slen_t tokenize_field(xlat_exp_head_t *head, xlat_exp_t **out, fr_sbuf
 		}
 
 		/*
+		 *	Cast a string to a string means "no cast".
+		 */
+		if ((cast_type == FR_TYPE_STRING) && (vpt->quote != T_BARE_WORD)) {
+			tmpl_cast_set(vpt, FR_TYPE_NULL);
+			cast_type = FR_TYPE_NULL;
+		}
+
+		/*
 		 *	Push the cast down.
 		 *
 		 *	But if we're casting to string, and the RHS is already a string, we don't need to cast
@@ -2704,7 +2712,7 @@ static fr_slen_t tokenize_field(xlat_exp_head_t *head, xlat_exp_t **out, fr_sbuf
 #ifndef NDEBUG
 		if (vpt->name[0] == '%') {
 			fr_assert(vpt->rules.attr.prefix == TMPL_ATTR_REF_PREFIX_NO);
-		} else {
+		} else if (!tmpl_require_enum_prefix) {
 			fr_assert(vpt->rules.attr.prefix == TMPL_ATTR_REF_PREFIX_YES);
 		}
 #endif

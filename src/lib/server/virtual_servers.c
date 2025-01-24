@@ -114,7 +114,6 @@ static CONF_SECTION *virtual_server_root;
 static fr_rb_tree_t *listen_addr_root = NULL;
 
 static int namespace_on_read(TALLOC_CTX *ctx, void *out, UNUSED void *parent, CONF_ITEM *ci, conf_parser_t const *rule);
-static int server_on_read(TALLOC_CTX *ctx, void *out, UNUSED void *parent, CONF_ITEM *ci, UNUSED conf_parser_t const *rule);
 
 static int namespace_parse(TALLOC_CTX *ctx, void *out, UNUSED void *parent, CONF_ITEM *ci, conf_parser_t const *rule);
 static int listen_parse(TALLOC_CTX *ctx, void *out, UNUSED void *parent, CONF_ITEM *ci, conf_parser_t const *rule);
@@ -135,7 +134,7 @@ const conf_parser_t virtual_servers_on_read_config[] = {
 	{ FR_CONF_POINTER("server", 0, CONF_FLAG_SUBSECTION | CONF_FLAG_OK_MISSING | CONF_FLAG_MULTI, &virtual_servers),
 			  .subcs_size = sizeof(virtual_server_t), .subcs_type = "virtual_server_t",
 			  .subcs = (void const *) server_on_read_config, .name2 = CF_IDENT_ANY,
-			  .on_read = server_on_read },
+			  .on_read = cf_null_on_read },
 
 	CONF_PARSER_TERMINATOR
 };
@@ -278,28 +277,6 @@ static int namespace_on_read(TALLOC_CTX *ctx, UNUSED void *out, UNUSED void *par
 	cf_data_add(server_cs, mi, "process_module", false);
 	cf_data_add(server_cs, *(process->dict), "dict", false);
 
-	return 0;
-}
-
-/** Callback when a "server" section is created.
- *
- *  This callback exists only as a place-holder to ensure that the
- *  listen_on_read function is called.  The conf file routines won't
- *  recurse into every conf_parser_t section to check if there's an
- *  "on_read" callback.  So this place-holder is a signal.
- *
- * @param[in] ctx	to allocate data in.
- * @param[out] out	Unused
- * @param[in] parent	Base structure address.
- * @param[in] ci	#CONF_SECTION containing the server section.
- * @param[in] rule	unused.
- * @return
- *	- 0 on success.
- *	- -1 on failure.
- */
-static int server_on_read(UNUSED TALLOC_CTX *ctx, UNUSED void *out, UNUSED void *parent,
-			  UNUSED CONF_ITEM *ci, UNUSED conf_parser_t const *rule)
-{
 	return 0;
 }
 
@@ -980,6 +957,41 @@ int virtual_server_compile_sections(virtual_server_t const *vs, tmpl_rules_t con
 	CONF_SECTION			*subcs = NULL;
 
 	found = 0;
+
+	/*
+	 *	Complain about v3 things being used in v4.
+	 *
+	 *	Don't complain when running in normal mode, because the server will just ignore the new
+	 *	sections.  But the check_config stuff is generally run before the service starts, and we
+	 *	definitely want to tell people when running in debug mode.
+	 */
+	if (check_config || DEBUG_ENABLED) {
+		bool fail = false;
+
+		while ((subcs = cf_section_next(server, subcs)) != NULL) {
+			char const *name;
+
+			if (cf_section_name2(subcs) != NULL) continue;
+
+			name = cf_section_name1(subcs);
+			if ((strcmp(name, "authorize") == 0) ||
+			    (strcmp(name, "authenticate") == 0) ||
+			    (strcmp(name, "post-auth") == 0) ||
+			    (strcmp(name, "preacct") == 0) ||
+			    (strcmp(name, "accounting") == 0) ||
+			    (strcmp(name, "pre-proxy") == 0) ||
+			    (strcmp(name, "post-proxy") == 0)) {
+				cf_log_err(subcs, "Version 3 processing section '%s' is not valid in version 4.",
+					   name);
+				fail = true;
+			}
+		}
+
+		/*
+		 *	Complain about _all_ of the sections, and not just the first one.
+		 */
+		if (fail) return -1;
+	}
 
 	/*
 	 *	The sections are in trees, so this isn't as bad as it

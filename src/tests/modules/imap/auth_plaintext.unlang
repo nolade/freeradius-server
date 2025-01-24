@@ -7,7 +7,7 @@ imap.authenticate {
 #  Avoid false negatives by aborting test
 #
 if !(ok) {
-    if (&Module-Failure-Message[*] == "imap: curl request failed: Timeout was reached (28)") {
+    if (Module-Failure-Message[*] == "imap: curl request failed: Timeout was reached (28)") {
         test_pass
         handled
     }
@@ -17,7 +17,7 @@ if !(ok) {
 #
 #  Check for module failing with missing attributes
 #
-&request -= &User-Password[*]
+request -= User-Password[*]
 
 imap.authenticate {
     fail = 1
@@ -28,8 +28,8 @@ if !(invalid) {
     test_fail
 }
 
-&User-Password := 'test2'
-&request -= &User-Name[*]
+User-Password := 'test2'
+request -= User-Name[*]
 
 imap.authenticate {
     fail = 1
@@ -44,27 +44,27 @@ if !(invalid) {
 #  Now do multiple authentications of different users
 #
 
-&User-Name := 'user2'
+User-Name := 'user2'
 imap.authenticate {
     fail = 1
 }
 
 if !(ok) {
-    if (&Module-Failure-Message[*] == "imap: curl request failed: Timeout was reached (28)") {
+    if (Module-Failure-Message[*] == "imap: curl request failed: Timeout was reached (28)") {
         test_pass
         handled
     }
     test_fail
 }
 
-&User-Name := 'user3'
-&User-Password := 'test3'
+User-Name := 'user3'
+User-Password := 'test3'
 imap.authenticate {
     fail = 1
 }
 
 if !(ok) {
-    if (&Module-Failure-Message[*] == "imap: curl request failed: Timeout was reached (28)") {
+    if (Module-Failure-Message[*] == "imap: curl request failed: Timeout was reached (28)") {
         test_pass
         handled
     }
@@ -74,42 +74,42 @@ if !(ok) {
 #
 #  And repeat all three
 #
-&User-Name := 'user1'
-&User-Password := 'test1'
+User-Name := 'user1'
+User-Password := 'test1'
 imap.authenticate {
     fail = 1
 }
 
 if !(ok) {
-    if (&Module-Failure-Message[*] == "imap: curl request failed: Timeout was reached (28)") {
+    if (Module-Failure-Message[*] == "imap: curl request failed: Timeout was reached (28)") {
         test_pass
         handled
     }
     test_fail
 }
 
-&User-Name := 'user2'
-&User-Password := 'test2'
+User-Name := 'user2'
+User-Password := 'test2'
 imap.authenticate {
     fail = 1
 }
 
 if !(ok) {
-    if (&Module-Failure-Message[*] == "imap: curl request failed: Timeout was reached (28)") {
+    if (Module-Failure-Message[*] == "imap: curl request failed: Timeout was reached (28)") {
         test_pass
         handled
     }
     test_fail
 }
 
-&User-Name := 'user3'
-&User-Password := 'test3'
+User-Name := 'user3'
+User-Password := 'test3'
 imap.authenticate {
     fail = 1
 }
 
 if !(ok) {
-    if (&Module-Failure-Message[*] == "imap: curl request failed: Timeout was reached (28)") {
+    if (Module-Failure-Message[*] == "imap: curl request failed: Timeout was reached (28)") {
         test_pass
         handled
     }

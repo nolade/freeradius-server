@@ -3,7 +3,7 @@
 #
 $INCLUDE cluster_reset.inc
 
-&control.IP-Pool.Name := 'test_delete'
+control.IP-Pool.Name := 'test_delete'
 
 #
 #  Add IP addresses
@@ -20,7 +20,7 @@ if (!updated) {
 	test_fail
 }
 
-if !(&reply.Framed-IP-Address == 192.168.0.1) {
+if !(reply.Framed-IP-Address == 192.168.0.1) {
 	test_fail
 }
 
@@ -48,6 +48,6 @@ if !(%redis(ZCOUNT, {%{control.IP-Pool.Name}%}:pool, -inf, +inf) == 0) {
 	test_fail
 }
 
-&reply := {}
+reply := {}
 
 test_pass

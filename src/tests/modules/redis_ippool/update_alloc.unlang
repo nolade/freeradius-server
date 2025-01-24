@@ -3,7 +3,7 @@
 #
 $INCLUDE cluster_reset.inc
 
-&control.IP-Pool.Name := 'test_update_alloc'
+control.IP-Pool.Name := 'test_update_alloc'
 
 #
 #  Add IP addresses
@@ -19,13 +19,13 @@ if (!updated) {
 #
 #  Attempt to reserve an IP address by performing a renew
 #
-&Framed-IP-Address := 192.168.0.1
-&NAS-IP-Address := 127.0.0.1
+Framed-IP-Address := 192.168.0.1
+NAS-IP-Address := 127.0.0.1
 
 redis_ippool.renew
 
 # 3. Check the expiry attribute is present and correct
-if !(&reply.Session-Timeout == 60) {
+if !(reply.Session-Timeout == 60) {
 	test_fail
 }
 
@@ -35,10 +35,10 @@ if !(%redis(HGET, {%{control.IP-Pool.Name}}:ip:%{reply.Framed-IP-Address}, gatew
 }
 
 # 5. Verify we got an IP
-if !(&reply.Framed-IP-Address == 192.168.0.1) {
+if !(reply.Framed-IP-Address == 192.168.0.1) {
 	test_fail
 }
 
-&reply := {}
+reply := {}
 
 test_pass

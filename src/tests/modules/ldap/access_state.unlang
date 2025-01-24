@@ -1,5 +1,5 @@
 # Bill should be disabled
-&Stripped-User-Name := 'bill'
+Stripped-User-Name := 'bill'
 ldap {
 	disallow = 1
 }
@@ -8,16 +8,16 @@ if (!disallow) {
 }
 
 # Test suspended profile application
-&Stripped-User-Name := 'bobby'
+Stripped-User-Name := 'bobby'
 ldap
 if (!updated) {
 	test_fail
 }
 
-if (&reply.Reply-Message != 'User-Suspended') {
+if (reply.Reply-Message != 'User-Suspended') {
 	test_fail
 }
 
-&reply := {}
+reply := {}
 
 test_pass

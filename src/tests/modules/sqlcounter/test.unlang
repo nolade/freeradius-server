@@ -22,7 +22,7 @@ if (!noop) {
 #
 #  Now set a limit and re-call the module
 #
-&control.Max-Daily-Session := 100
+control.Max-Daily-Session := 100
 
 dailycounter
 if (!updated) {
@@ -32,25 +32,25 @@ if (!updated) {
 #
 #  Check attributes have been set
 #
-if !(&control.Daily-Session-Time == 0) {
+if !(control.Daily-Session-Time == 0) {
 	test_fail
 }
 
-if !(&reply.Session-Timeout == 100) {
+if !(reply.Session-Timeout == 100) {
 	test_fail
 }
 
 #
 #  Calculate the start date/time to compare with attribute set by the module
 #
-&date_str = %date('now')
-&now = %date(%{date_str})
-if (&date_str =~ /([0-9]{4}-[0-9]{2}-[0-9]{2}T)[0-9]{2}:[0-9]{2}:[0-9]{2}Z/) {
-	&date_str := "%{1}" + '00:00:00Z'
+date_str = %date('now')
+now = %date(%{date_str})
+if (date_str =~ /([0-9]{4}-[0-9]{2}-[0-9]{2}T)[0-9]{2}:[0-9]{2}:[0-9]{2}Z/) {
+	date_str := "%{1}" + '00:00:00Z'
 }
-&start = %date(%{date_str})
+start = %date(%{date_str})
 
-if !(&control.dailycounter-Reset-Start == &start) {
+if !(control.dailycounter-Reset-Start == start) {
 	test_fail
 }
 
@@ -70,11 +70,11 @@ if (!updated) {
 #
 #  Check the attributes have been updated
 #
-if !(&control.Daily-Session-Time == 60) {
+if !(control.Daily-Session-Time == 60) {
 	test_fail
 }
 
-if !(&reply.Session-Timeout == 40) {
+if !(reply.Session-Timeout == 40) {
 	test_fail
 }
 
@@ -96,15 +96,15 @@ if (!ok) {
 #
 #  Check the attributes have been updated correctly.
 #
-if !(&control.Daily-Session-Time == 10) {
+if !(control.Daily-Session-Time == 10) {
 	test_fail
 }
 
-if !(&reply.Session-Timeout == 40) {
+if !(reply.Session-Timeout == 40) {
 	test_fail
 }
 
-&reply := {}
+reply := {}
 
 #
 #  Insert a second fake accounting record, which when summed with the existing will exceed the limit.
@@ -118,10 +118,10 @@ if (!reject) {
 	test_fail
 }
 
-if !(&reply.Reply-Message == 'Your maximum daily usage has been reached') {
+if !(reply.Reply-Message == 'Your maximum daily usage has been reached') {
 	test_fail
 }
-if !(&control.Daily-Session-Time == 109) {
+if !(control.Daily-Session-Time == 109) {
 	test_fail
 }
 
@@ -129,18 +129,18 @@ if !(&control.Daily-Session-Time == 109) {
 #  Find how much time is left before the next reset and set the limit
 #  so the user has enough remaining to get into the next period
 #
-&remaining = &control.dailycounter-Reset-End - &now
-&control.Max-Daily-Session := &remaining + 110
+remaining = control.dailycounter-Reset-End - now
+control.Max-Daily-Session := remaining + 110
 
-&reply := {}
+reply := {}
 
 dailycounter
 
-if !(&reply.Session-Timeout == (&control.Max-Daily-Session - 109)) {
+if !(reply.Session-Timeout == (control.Max-Daily-Session - 109)) {
 	test_fail
 }
 
-&reply := {}
+reply := {}
 
 #
 #  Now use module instance with auto_extend = yes
@@ -149,10 +149,10 @@ if !(&reply.Session-Timeout == (&control.Max-Daily-Session - 109)) {
 #
 dailycounter_extend
 
-if !((&reply.Session-Timeout > (&remaining + &control.Max-Daily-Session - 2)) && (&reply.Session-Timeout <= (&remaining + &control.Max-Daily-Session))) {
+if !((reply.Session-Timeout > (remaining + control.Max-Daily-Session - 2)) && (reply.Session-Timeout <= (remaining + control.Max-Daily-Session))) {
 	test_fail
 }
 
-&reply := {}
+reply := {}
 
 test_pass

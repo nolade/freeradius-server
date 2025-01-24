@@ -335,16 +335,18 @@ int call_env_parsed_valid(call_env_parsed_t const *parsed, CONF_ITEM const *ci, 
 
 	tmpl = parsed->data.tmpl;
 	switch (tmpl->type) {
+		/*
+		 *	These can't be created from a call_env flag which is marked as an attribute.
+		 */
 	case TMPL_TYPE_DATA:
 	case TMPL_TYPE_EXEC:
 	case TMPL_TYPE_XLAT:
-		if (call_env_attribute(rule->flags)) {
-			cf_log_perr(ci, "'%s' expands to %s - attribute reference required", tmpl->name,
-				    tmpl_type_to_str(tmpl->type));
-			return -1;
-		}
-		FALL_THROUGH;
+		fr_assert(!call_env_attribute(rule->flags));
+		break;
 
+		/*
+		 *	This can be created from multiple types of flags, not just an attribute one.
+		 */
 	case TMPL_TYPE_ATTR:
 		break;
 
@@ -373,16 +375,28 @@ int call_env_parsed_valid(call_env_parsed_t const *parsed, CONF_ITEM const *ci, 
  *	- -1 on failure.
  */
 int call_env_parse_pair(TALLOC_CTX *ctx, void *out, tmpl_rules_t const *t_rules, CONF_ITEM *ci,
-			UNUSED call_env_ctx_t const *cec, UNUSED call_env_parser_t const *rule)
+			UNUSED call_env_ctx_t const *cec, call_env_parser_t const *rule)
 {
 	CONF_PAIR const	*to_parse = cf_item_to_pair(ci);
 	tmpl_t		*parsed_tmpl;
+	fr_token_t	quote = cf_pair_value_quote(to_parse);
 
-	if (tmpl_afrom_substr(ctx, &parsed_tmpl,
-			      &FR_SBUFF_IN(cf_pair_value(to_parse), talloc_strlen(cf_pair_value(to_parse))),
-			      cf_pair_value_quote(to_parse), value_parse_rules_quoted[cf_pair_value_quote(to_parse)],
-			      t_rules) < 0) {
-		return -1;
+	/*
+	 *	If it's marked as containing an attribute reference,
+	 *	then always parse it as an attribute reference.
+	 */
+	if (call_env_attribute(rule->flags) ||
+	    ((quote == T_BARE_WORD) && call_env_bare_word_attribute(rule->flags))) {
+		if (tmpl_afrom_attr_str(ctx, NULL, &parsed_tmpl, cf_pair_value(to_parse), t_rules) <= 0) {
+			return -1;
+		}
+	} else {
+		if (tmpl_afrom_substr(ctx, &parsed_tmpl,
+				      &FR_SBUFF_IN(cf_pair_value(to_parse), talloc_strlen(cf_pair_value(to_parse))),
+				      quote, value_parse_rules_quoted[cf_pair_value_quote(to_parse)],
+				      t_rules) < 0) {
+			return -1;
+		}
 	}
 	*(void **)out = parsed_tmpl;
 

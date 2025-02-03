@@ -1,0 +1,180 @@
+= Overview
+
+== What is RADIUS?
+
+RADIUS, which stands for “Remote Authentication Dial In User Service”, is a network protocol - a system
+that defines rules and conventions for communication between network devices - for remote user
+authentication and accounting. Commonly used by Internet Service Providers (ISPs), cellular network
+providers, and corporate and educational networks, the RADIUS protocol serves three primary functions:
+• Authenticates users or devices before allowing them access to a network
+• Authorizes those users or devices for specific network services
+• Accounts for and tracks the usage of those services.
+
+=== History
+
+In 1991, Merit Network, a non-profit internet provider, required a creative way to manage dial-in access to
+various Points-Of-Presence (POPs) across its network. In response to this need, RADIUS was created by
+Livingston Enterprises.
+At the time RADIUS was created, network access systems were distributed across a wide area and were
+run by multiple independent organizations. Central administrators wanted to prevent problems with
+security and scalability, and thus did not want to distribute user names and passwords; instead, they
+wanted the remote access servers to contact a central server to authorize access to the requested system
+or service. In response to contact from the remote access server, the central server would return a
+“success” or “failure” message, and the remote machines would be in charge of enforcing this response
+for each end user.
+The goal of RADIUS was, therefore, to create a central location for user authentication, wherein users from
+many locations could request network access.
+The simplicity, efficiency, and usability of the RADIUS system led to its widespread adoption by network
+equipment vendors, to the extent that currently, RADIUS is considered an industry standard and is also
+positioned to become an Internet Engineering Task Force (IETF) standard.
+
+ === Customers
+
+A wide and varied array of businesses currently utilize the RADIUS protocol for their authentication and
+accounting needs. Some examples of RADIUS customers are:
+• Cellular network providers with millions of users
+• Small WISP start-up providing the local neighborhood with Internet connectivity
+• Enterprise networks implementing Network Access Control (NAC) using 802.1x to ring fence their
+network
+
+=== Benefits
+
+The RADIUS client server protocol contains many technological advantages for customers, including:
+• An open and scalable solution
+• Broad support by a large vendor base
+• Easy modification
+• Separation of security and communication processes
+• Adaptable to most security systems
+• Workable with any communication device that supports RADIUS client protocol
+
+The RADIUS client-server architecture provides an open and scalable solution that is broadly supported
+by a large vendor base. It can be readily modified to meet a variety of situations. Customers can modify
+RADIUS-based authentication servers to work with a large number of security systems on the market.
+RADIUS servers work with any communications device that supports the RADIUS client protocol.
+In addition, the flexibility of the RADIUS authentication mechanisms allows an organization to maintain
+any investment they may have made in an existing security technology: customers can modify the
+RADIUS server to run with any type of security technology. The flexible authentication mechanisms
+inherent in the RADIUS server facilitate its integration with existing and legacy systems when required.
+
+Another advantage of the RADIUS architecture is that any component of a security system that supports
+the RADIUS protocols can derive authentication and authorization from the central RADIUS server.
+Alternatively, the central server can integrate with a separate authentication mechanism.
+The utility of the RADIUS protocol extends beyond those systems that utilize network access devices and
+terminal servers for network access. RADIUS has been widely accepted by Internet Service Providers (ISPs)
+to provide Virtual Private Network (VPN) services. In this context, RADIUS technology allows an organization to use ISP infrastructure for communications securely.
+The distributive nature of RADIUS effectively separates the security processes (carried out on the authentication server) from the communications processes (implemented by the modem pool or the Network
+Access Server (NAS)), allowing for a single centralized information store for authorization and authentication information. This centralization can significantly lessen the administrative burden of providing
+appropriate access control for a large number of remote users. If ensuring high availability is not a priority,
+then redundancy is not required; this centralization can thus be maximized, since all RADIUS-compatible
+hardware on a LAN can derive authentication services from a single server.
+
+== What is FreeRADIUS?
+
+FreeRADIUS is the most popular and the most widely deployed open source RADIUS server in the world.
+It serves as the basis for multiple commercial offerings, and it supplies the authentication, authorization,
+and accounting (AAA) needs of many Fortune 500 companies and Tier 1 ISPs. It is also widely used by the
+academic community (i.e., eduroam, the world-wide roaming access service developed for the international research and education community, utilizes FreeRADIUS software).
+FreeRADIUS was started in August 1999 by Alan DeKok and Miquel van Smoorenburg. Miquel had
+previously written the Cistron RADIUS server software, which had been widely adopted when the
+Livingston server was no longer in service. FreeRADIUS was developed using a modular design, to
+encourage more active community involvement.
+
+=== Features
+
+More authentication types are supported by FreeRADIUS than by any other open source server. For
+example, FreeRADIUS is the only open source RADIUS server to support Extensible Authentication
+Protocol (EAP).
+FreeRADIUS is also the only open source RADIUS server to support virtual servers. The use of virtual
+servers means that complex implementations are simplified and ongoing support and maintenance costs
+for network administrators are greatly reduced; thus, the ability of FreeRADIUS to support virtual servers
+gives it a huge advantage over the competition.
+
+=== Modularity
+
+The modular design protocol makes FreeRADIUS easy to understand. The modular interface also
+simplifies adding or removing modules - for example, if a feature is not needed for a particular configuration, the module is easily removed. Once the module is removed, it does not affect server performance,
+memory use, or security. This flexibility enables the server to run on platforms ranging from embedded
+systems to multi-core machines with gigabytes of RAM.
+
+=== Scalability
+
+A single RADIUS server can easily transition from handling one request every few seconds to handling
+thousands of requests per second, simply by reconfiguring a few default settings. Many large organizations (those with more than 10 million customers) are dependent on FreeRADIUS for their AAA needs.
+Often, only a single FreeRADIUS server is required to fill the needs of these large organizations.
+While many commercial severs offer different versions of their software to handle different needs, only
+the latest version of FreeRADIUS is needed to obtain better performance, more realms, more RADIUS
+clients, and many other features, with no need to purchase additional product licenses.
+
+
+== Getting Started with FreeRADIUS
+
+FreeRADIUS can be installed using the pre-built packages available
+from https://packages.networkradius.com[Network RADIUS,
+window="_blank"]. That page contains packages for all common OS
+distributions.  New packages are available as soon as a new version
+has been released.  Packages for older releases are also available for
+historical purposes.
+
+FreeRADIUS can also be installed from the source code.  Please see the
+xref:howto:installation/index.adoc[installation guide] for instructions.
+
+WARNING: Many Operating System distributions ship versions of FreeRADIUS
+which are years out of date. Those versions may contain bugs which have
+been fixed in newer releases. We recommend using the
+https://packages.networkradius.com[Network RADIUS, window="_blank"] packages where
+possible.
+
+Administrators who are new to FreeRADIUS should read the
+xref:concepts:index.adoc[concepts section] as it describes the concepts behind
+FreeRADIUS. It is vital for newcomers to understand these concepts, as the rest
+of the documentation assumes familiarity with them.
+
+A detailed xref:reference:unlang/index.adoc[unlang] reference guide is also available.
+This section describes the syntax and functionality of the keywords,
+data types, etc. used in the `unlang` processing language.
+
+All of the xref:reference:raddb/index.adoc[configuration files] are available in
+hypertext format. It can often be easier to read the configuration files
+in a nicely formatted version, instead of as a fixed-width font in a
+text editor.
+
+For specific problem solving, we recommend the xref:howto:index.adoc[how-to]
+guides. These guides give instructions for reaching high-level goals, or for
+configuring and testing individual
+xref:howto:modules/configuring_modules.adoc[modules].
+
+There is also xref:developers:index.adoc[developer documentation]. This section
+documents the APIs for developers. Most people can ignore it.
+
+For further details, about the debug output see the
+https://wiki.freeradius.org/radiusd-X[radiusd-X, window="_blank"] page on the
+https://wiki.freeradius.org[wiki, window="_blank"].
+
+== Getting Help
+
+We also recommend joining the
+https://lists.freeradius.org/mailman/listinfo/freeradius-users[mailing
+list] in order to ask questions and receive answers. The developers are
+not on Stack Overflow, IRC, or other web sites. While the FreeRADIUS
+source is available on
+https://github.com/FreeRADIUS/freeradius-server/[GitHub, window="_blank"], questions
+posted there will not be answered.
+
+Before posting to the list, please read the
+https://wiki.freeradius.org/list-help[list help, window="_blank"] page. That page explains
+how to run the server in debugging mode; how to understand the debug
+output; and what information to post to the list.
+
+Commercial support for FreeRADIUS is available from
+https://networkradius.com/freeradius-support/[Network RADIUS, window="_blank"].
+
+
+The documentation is split into sections by subject area, oganized by
+desired outcome. At a high level, the subject areas describe:
+
+* xref:concepts:index.adoc[Concepts] and introduction for newcomers
+* The xref:reference:raddb/index.adoc[configuration files] located in `/etc/raddb/`, or `/etc/freeradius/`
+* The syntax of the xref:reference:unlang/index.adoc[unlang] processing language
+* Various xref:howto:index.adoc[how-to] guides
+* xref:howto:installation/index.adoc[Installing] and xref:howto:installation/upgrade.adoc[upgrading] FreeRADIUS
+* xref:developers:index.adoc[Developer documentation]

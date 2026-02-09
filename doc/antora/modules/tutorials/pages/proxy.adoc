@@ -1,6 +1,6 @@
-= Configuring a server to proxy requests
+= Proxying
 
-*Goal:* To configure the server to proxy packets to a remote (home)
+*Goal:* Configure the server to proxy packets to a remote (home)
 RADIUS server and to perform test authentications against both the
 proxy server and the home server.
 
@@ -13,9 +13,9 @@ proxy server and the home server.
 
 *Diagram:*
 
-image::access-request-proxy.svg[Fig. Proxy]
+image::proxy.svg[Fig. Proxy]
 
-We assume:
+*Prerequisites:*
 
 * You already have a working *second FreeRADIUS server* (the "home" server) running on another machine / IP.
 * It accepts authentication on port 1812 with a known shared secret.
@@ -53,9 +53,9 @@ Once proxying is verified, the home server will be halted. You should
 then re-attempt to authenticate `bob@realm1.com`, and observe how the
 proxy server behaves when the home server does not respond.
 
-== Step 1. Create the proxy module instance (pointing to your home server)
+== 1. Create the proxy module instance
 
-Create this file: `mods-available/proxy-realm1`
+Create the file: `mods-available/proxy-realm1` and add the configuration below.
 
 [source,text]
 ----
@@ -93,7 +93,7 @@ $ cd mods-enabled
 $ ln -s ../mods-available/proxy-realm1 proxy-realm1
 ----
 
-== Step 2. Modify the virtual server to decide when to proxy
+== 2. Modify the virtual server to decide when to proxy
 
 Edit `sites-enabled/default`
 
@@ -127,7 +127,7 @@ authenticate proxy-realm1 {
 ----
 
 
-== Step 3. Verify the config & restart
+== 3. Verify the configuration and restart
 
 [source,text]
 ----
@@ -139,7 +139,7 @@ $ radiusd -X
 ----
 
 
-== Step 4. Testing
+== 4. Testing
 
 Once the configuration is there, you can test each piece of
 functionality, one at a time.
@@ -151,7 +151,7 @@ functionality, one at a time.
 echo 'User-Name = "bob", User-Password = "hello"' | radclient -x 127.0.0.1 auth testing123
 ----
 
-=== Radclient output
+*Radclient output:*
 
 [source,text]
 ----
@@ -164,8 +164,10 @@ Received Access-Accept Id 200 from 127.0.0.1:1812 to 0.0.0.0:58423 via lo length
         User-Name = "bob"
 ----
 
-=== Server debug output (main / proxy server with a local user)
+*Server debug output (main / proxy server with a local user):*
 
+[%collapsible]
+====
 [source,text]
 ----
 (0)      if (User-Name =~ /@realm1\.com$/)  {
@@ -195,6 +197,7 @@ Received Access-Accept Id 200 from 127.0.0.1:1812 to 0.0.0.0:58423 via lo length
 (0)          files - Password.Cleartext := hello
 (0)        files (ok)
 ----
+====
 
 === Proxied authentication
 
@@ -205,7 +208,7 @@ You can now test a proxied authentication.
 echo 'User-Name = "bob@realm1.com", User-Password = "hello"' | radclient -x 127.0.0.1 auth testing123
 ----
 
-=== Radclient output
+*Radclient output:*
 
 [source,text]
 ----
@@ -218,8 +221,10 @@ Received Access-Accept Id 130 from 127.0.0.1:1812 to 0.0.0.0:43437 via lo length
         User-Name = "bob@realm1.com"
 ----
 
-=== Server debug output (main / proxy server with proxied user)
+*Server debug output (main / proxy server with proxied user)*
 
+[%collapsible]
+====
 [source,text]
 ----
 (0)      if (User-Name =~ /@realm1\.com$/)  {
@@ -247,9 +252,12 @@ Received Access-Accept Id 130 from 127.0.0.1:1812 to 0.0.0.0:43437 via lo length
 (0)        proxy-realm1 - proxy-realm1 - Resuming execution
 (0)        proxy-realm1 (ok)
 ----
+====
 
-=== Proxy server debug output (when proxied packet arrives)
+*Proxy server debug output (when proxied packet arrives)*
 
+[%collapsible]
+====
 [source,text]
 ----
 (0) suffix: Checking for suffix after "@"
@@ -269,6 +277,7 @@ Received Access-Accept Id 130 from 127.0.0.1:1812 to 0.0.0.0:43437 via lo length
 (0)     [ok] = ok
 (0)   } # Auth-Type PAP = ok
 ----
+====
 
 == Questions
 

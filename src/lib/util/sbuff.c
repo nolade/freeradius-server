@@ -1542,7 +1542,14 @@ static inline CC_HINT(always_inline) int sbuff_scratch_init(TALLOC_CTX **out)
 {
 	TALLOC_CTX	*scratch;
 
-	if (sbuff_scratch_freed) {
+	/*
+	 *	Once main has signalled shutdown the TLS slot may be a
+	 *	dangling pointer on threads we don't own; skip the scratch
+	 *	cache and let callers allocate at top level instead.  The
+	 *	TLS-local `sbuff_scratch_freed` is left in place for the
+	 *	per-thread teardown path on FR-managed threads.
+	 */
+	if (sbuff_scratch_freed || fr_atexit_thread_local_alloc_disabled()) {
 		*out = NULL;
 		return 0;
 	}

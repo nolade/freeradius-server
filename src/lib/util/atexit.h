@@ -67,6 +67,10 @@ int		fr_atexit_trigger(bool uctx_scope, fr_atexit_t func, void const *uctx);
 
 bool		fr_atexit_is_exiting(void);
 
+void		fr_atexit_thread_local_disable_alloc(void);
+
+bool		fr_atexit_thread_local_alloc_disabled(void);
+
 #ifdef HAVE_PTHREADS
 /*
  *	Because GCC only added support in 2013 *sigh*

@@ -347,11 +347,11 @@ TALLOC_CTX *fr_log_pool_init(void)
 	TALLOC_CTX	*pool;
 
 	/*
-	 *	Post-trigger of every thread atexit handler the TLS slot
-	 *	may be a dangling pointer for any thread we don't own
-	 *	(librdkafka's bg threads etc.) - skip the pool entirely.
+	 *	Once main has signalled shutdown the TLS slot may be a
+	 *	dangling pointer for any thread we don't own (librdkafka's
+	 *	bg threads etc.) - skip the pool entirely.
 	 */
-	if (unlikely(atomic_load_explicit(&log_pools_disabled, memory_order_relaxed))) return NULL;
+	if (unlikely(fr_atexit_thread_local_alloc_disabled())) return NULL;
 
 	pool = fr_log_pool;
 	if (unlikely(!pool)) {

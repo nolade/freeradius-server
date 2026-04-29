@@ -716,7 +716,7 @@ static fr_bio_verify_action_t rlm_radius_verify(UNUSED fr_bio_t *bio, void *veri
  *
  * @param[out] h_out	Where to write the new file descriptor.
  * @param[in] conn	to initialise.
- * @param[in] uctx	A #bio_thread_t
+ * @param[in] uctx	A #bio_handle_ctx_t
  */
 CC_NO_UBSAN(function) /* UBSAN: false positive - public vs private connection_t trips --fsanitize=function*/
 static connection_state_t conn_init(void **h_out, connection_t *conn, void *uctx)

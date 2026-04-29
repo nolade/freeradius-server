@@ -2152,12 +2152,6 @@ allocate_number:
 	c->number = unlang_number++;
 	compile_set_default_actions(c, unlang_ctx);
 
-	/*
-	 *	Only insert the per-thread allocation && instantiation if it's used.
-	 */
-	op = &unlang_ops[c->type];
-	if (!op->thread_inst_size) return c;
-
 	if (!fr_rb_insert(unlang_instruction_tree, c)) {
 		cf_log_err(ci, "Instruction \"%s\" number %u has conflict with previous one.",
 			   c->debug_name, c->number);

@@ -85,7 +85,7 @@ int unlang_thread_instantiate(TALLOC_CTX *ctx)
 
 		op = &unlang_ops[instruction->type];
 
-		fr_assert(op->thread_inst_size);
+		if (!op->thread_inst_size) continue;
 
 		/*
 		 *	Allocate any thread-specific instance data.

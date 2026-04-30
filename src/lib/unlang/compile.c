@@ -2155,6 +2155,12 @@ allocate_number:
 	if (!c) return NULL;
 	if (c == UNLANG_IGNORE) return UNLANG_IGNORE;
 
+	/*
+	 *	Some compilation paths already go through this path
+	 *	and will have assigned a number.
+	 */
+	if (c->number) return c;
+
 	c->number = unlang_number++;
 	compile_set_default_actions(c, unlang_ctx);
 

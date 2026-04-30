@@ -1465,6 +1465,12 @@ unlang_t *unlang_compile_children(unlang_group_t *g, unlang_compile_ctx_t *unlan
 						skip_else = single->debug_name;
 					} else {
 						/*
+						 *	If this came from compile_single, then it will already
+						 *	have a number and be in the tree.
+						 */
+						if (single->number) fr_rb_remove(unlang_instruction_tree, single);
+
+						/*
 						 *	The condition never
 						 *	matches, so we can
 						 *	avoid putting it into

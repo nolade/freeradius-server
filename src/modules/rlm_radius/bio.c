@@ -2112,6 +2112,15 @@ static void request_demux(UNUSED fr_event_list_t *el, trunk_connection_t *tconn,
 		fr_assert(u == treq->preq);
 
 		/*
+		 *	If we got a reply during the zombie period mark the
+		 *	connection as active and remove the timer.
+		 */
+		if (unlikely(fr_timer_armed(h->zombie_ev))) {
+			trunk_connection_signal_active(tconn);
+			fr_timer_delete(&h->zombie_ev);
+		}
+
+		/*
 		 *	Decode the incoming packet.
 		 */
 		reason = decode(request->reply_ctx, &reply, &code, h, request, u, rr->vector, h->buffer, (size_t)slen);

@@ -49,6 +49,7 @@ typedef struct {
 	fr_bio_fd_info_t const	*fd_info;	//!< status of the FD.
 	fr_radius_ctx_t		radius_ctx;	//!< for signing packets
 	bio_limit_ports_t	limit_source_ports;	//!< What type of port limit is in use.
+	bool			dynamic;	//!< is this a dynamic home server.
 } bio_handle_ctx_t;
 
 typedef struct {
@@ -99,6 +100,7 @@ typedef struct {
 	fr_time_t		last_idle;		//!< last time we had nothing to do
 
 	fr_timer_t		*zombie_ev;		//!< Zombie timeout.
+	unlang_t const		*instruction;		//!< Instruction which triggered the start of the zombie period.
 
 	bool			status_checking;       	//!< whether we're doing status checks
 	bio_request_t		*status_u;		//!< for sending status check packets
@@ -1386,6 +1388,21 @@ static void zombie_timeout(fr_timer_list_t *tl, fr_time_t now, void *uctx)
 		return;
 	}
 
+	if (!h->ctx.dynamic) {
+		/*
+		 *	Force the instruction to immediately fail until the revive interval has expired.
+		 */
+		unlang_interpret_force_result(h->instruction, &(unlang_result_t){.rcode = RLM_MODULE_FAIL}, tl,
+					      h->ctx.inst->revive_interval);
+
+		/*
+		 *	Mark the connection as active, so when the module forced result times out
+		 *	requests will be sent again.
+		 */
+		trunk_connection_signal_active(tconn);
+		return;
+	}
+
 	/*
 	 *	Revive the connection after a time.
 	 */
@@ -1421,9 +1438,10 @@ static void zombie_timeout(fr_timer_list_t *tl, fr_time_t now, void *uctx)
  *	- true if the connection is zombie.
  *	- false if the connection is not zombie.
  */
-static bool check_for_zombie(fr_event_list_t *el, trunk_connection_t *tconn, fr_time_t now, fr_time_t last_sent)
+static bool check_for_zombie(request_t *request, trunk_connection_t *tconn, fr_time_t now, fr_time_t last_sent)
 {
 	bio_handle_t	*h = talloc_get_type_abort(tconn->conn->h, bio_handle_t);
+	fr_event_list_t	*el = unlang_interpret_event_list(request);
 
 	/*
 	 *	We're replicating, and don't care about the health of
@@ -1478,6 +1496,11 @@ static bool check_for_zombie(fr_event_list_t *el, trunk_connection_t *tconn, fr_
 			trunk_connection_signal_reconnect(tconn, CONNECTION_FAILED);
 		}
 	} else {
+		/*
+		 * Capture the instruction which started the zombie period.
+		 */
+		h->instruction = unlang_interpret_instruction(request);
+
 		if (fr_timer_at(h, el->tl, &h->zombie_ev, fr_time_add(now, h->ctx.inst->zombie_period),
 				false, zombie_timeout, tconn) < 0) {
 			ERROR("Failed inserting zombie timeout for connection");
@@ -1611,7 +1634,7 @@ static void do_retry(rlm_radius_t const *inst, bio_request_t *u, request_t *requ
 	 */
 	if (!tconn || (inst->mode == RLM_RADIUS_MODE_REPLICATE)) return;
 
-	check_for_zombie(unlang_interpret_event_list(request), tconn, now, retry->start);
+	check_for_zombie(request, tconn, now, retry->start);
 }
 
 CC_NO_UBSAN(function) /* UBSAN: false positive - public vs private connection_t trips --fsanitize=function*/
@@ -2961,6 +2984,7 @@ static xlat_action_t xlat_radius_client(UNUSED TALLOC_CTX *ctx, UNUSED fr_dcurso
 				.module_name = inst->name,
 				.inst = inst,
 				.limit_source_ports = (thread->num_ports > 0) ? LIMIT_PORTS_DYNAMIC : LIMIT_PORTS_NONE,
+				.dynamic = true,
 			},
 			.num_ports = thread->num_ports,
 		};

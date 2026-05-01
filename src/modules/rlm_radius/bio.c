@@ -2117,7 +2117,7 @@ static void request_demux(UNUSED fr_event_list_t *el, trunk_connection_t *tconn,
 		 */
 		if (unlikely(fr_timer_armed(h->zombie_ev))) {
 			trunk_connection_signal_active(tconn);
-			fr_timer_delete(&h->zombie_ev);
+			FR_TIMER_DELETE(&h->zombie_ev);
 		}
 
 		/*

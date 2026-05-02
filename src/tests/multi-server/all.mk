@@ -217,11 +217,11 @@ test.multi-server.ci: $(TEST_MULTI_SERVER_CI_TESTS)
 
 .PHONY: clean.test.multi-server
 clean.test.multi-server:
-	rm -rf $(OUTPUT)
+	${Q}rm -rf $(OUTPUT)
 
 .PHONY: distclean.test.multi-server
 distclean.test.multi-server: clean.test.multi-server
-	rm -rf $(TEST_MULTI_SERVER_FRAMEWORK_DIR)
+	${Q}rm -rf $(TEST_MULTI_SERVER_FRAMEWORK_DIR)
 
 .PHONY: clean
 clean: clean.test.multi-server

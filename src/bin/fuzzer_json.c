@@ -23,6 +23,7 @@
 RCSID("$Id$")
 
 #include <freeradius-devel/build.h>
+#include <freeradius-devel/util/talloc.h>
 
 DIAG_OFF(documentation)
 DIAG_OFF(deprecated)
@@ -33,7 +34,6 @@ DIAG_OFF(deprecated)
 #include <string.h>
 #include <stdbool.h>
 #include <sys/types.h>
-#include <talloc.h>
 #include <json-c/json.h>
 
 /* Forward declarations for FreeRADIUS types to avoid header complexity */

@@ -30,6 +30,13 @@ extern "C" {
 
 #include <ctype.h>
 
+#include <freeradius-devel/autoconf.h>	/* Very easy to miss including in special builds */
+#include <freeradius-devel/build.h>
+#include <freeradius-devel/missing.h>
+
+/*
+ *	The default talloc headers have doxygen complaints.
+ */
 #ifdef HAVE_WDOCUMENTATION
 DIAG_OFF(documentation)
 #endif
@@ -37,10 +44,6 @@ DIAG_OFF(documentation)
 #ifdef HAVE_WDOCUMENTATION
 DIAG_ON(documentation)
 #endif
-
-#include <freeradius-devel/autoconf.h>	/* Very easy to miss including in special builds */
-#include <freeradius-devel/build.h>
-#include <freeradius-devel/missing.h>
 
 #undef talloc_autofree_context
 /** The original function is deprecated, so replace it with our version

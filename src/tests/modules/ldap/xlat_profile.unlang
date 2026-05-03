@@ -45,6 +45,23 @@ group {
 
       control := {}
       reply := {}
+
+      # Profile DN injection: injection chars in %{user} are DN-escaped before use.
+      # Without escaping, 'suspended)(|(cn=*' would be injected into the filter,
+      # matching all profiles.  With DN escaping the crafted DN simply doesn't exist.
+      user := 'suspended)(|(cn=*'
+
+      if (%ldap.profile("ldap:///cn=%{user},ou=profiles,dc=example,dc=com")) {
+            test_fail
+      }
+
+      # Should be notfound - injected DN doesn't exist in the directory.
+      if (!notfound) {
+            test_fail
+      }
+
+      control := {}
+      reply := {}
 }
 
 if (!%ldap.profile('cn=profile3,ou=profiles,dc=example,dc=com')) {

@@ -136,7 +136,7 @@ static unlang_action_t ldap_group_name2dn_start(unlang_result_t *p_result, reque
 				 inst->group.obj_filter ? inst->group.obj_filter : "",
 				 group_ctx->group_name[0] && group_ctx->group_name[1] ? "(|" : "");
 	while (*name) {
-		fr_ldap_uri_escape_func(request, buffer, sizeof(buffer), *name++, NULL);
+		fr_ldap_filter_escape_func(request, buffer, sizeof(buffer), *name++, NULL);
 		filter = talloc_asprintf_append_buffer(filter, "(%s=%s)", inst->group.obj_name_attr, buffer);
 
 		group_ctx->name_cnt++;
@@ -823,12 +823,12 @@ unlang_action_t rlm_ldap_check_groupobj_dynamic(unlang_result_t *p_result, reque
 			},
 			.at_runtime = true,
 			.escape.box_escape = (fr_value_box_escape_t) {
-				.func = fr_ldap_box_escape,
-				.safe_for = (fr_value_box_safe_for_t)fr_ldap_box_escape,
+				.func = fr_ldap_filter_box_escape,
+				.safe_for = (fr_value_box_safe_for_t)fr_ldap_filter_box_escape,
 				.always_escape = false,
 			},
 			.escape.mode = TMPL_ESCAPE_PRE_CONCAT,
-			.literals_safe_for = (fr_value_box_safe_for_t)fr_ldap_box_escape,
+			.literals_safe_for = (fr_value_box_safe_for_t)fr_ldap_filter_box_escape,
 			.cast = FR_TYPE_STRING,
 		};
 

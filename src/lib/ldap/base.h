@@ -761,7 +761,10 @@ unlang_action_t fr_ldap_trunk_extended(TALLOC_CTX *ctx,
 void		fr_ldap_timeout_debug(request_t *request, fr_ldap_connection_t const *conn,
 				      fr_time_delta_t timeout, char const *prefix);
 
-size_t		fr_ldap_uri_escape_func(UNUSED request_t *request, char *out, size_t outlen, char const *in, UNUSED void *arg)
+size_t		fr_ldap_dn_escape_func(UNUSED request_t *request, char *out, size_t outlen, char const *in, UNUSED void *arg)
+		CC_HINT(nonnull(2,4));
+
+size_t		fr_ldap_filter_escape_func(UNUSED request_t *request, char *out, size_t outlen, char const *in, UNUSED void *arg)
 		CC_HINT(nonnull(2,4));
 
 size_t		fr_ldap_uri_unescape_func(UNUSED request_t *request, char *out, size_t outlen, char const *in, UNUSED void *arg)
@@ -958,7 +961,9 @@ char const	*fr_ldap_url_err_to_str(int ldap_url_err);
 
 void		fr_ldap_entry_dump(LDAPMessage *entry);
 
-int		fr_ldap_box_escape(fr_value_box_t *vb, UNUSED void *uctx);
+int		fr_ldap_dn_box_escape(fr_value_box_t *vb, UNUSED void *uctx);
+
+int		fr_ldap_filter_box_escape(fr_value_box_t *vb, UNUSED void *uctx);
 
 int		fr_ldap_filter_to_tmpl(TALLOC_CTX *ctx, tmpl_rules_t const *t_rules, char const **sub, size_t sublen,
 				       tmpl_t **out) CC_HINT(nonnull());

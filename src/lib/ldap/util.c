@@ -34,7 +34,8 @@ USES_APPLE_DEPRECATED_API
 
 #include <stdarg.h>
 
-static const char specials[] = ",+\"\\<>;*=()";
+/* RFC 4514 DN attribute value special characters */
+static const char dn_specials[] = ",+\"\\<>;*=()";
 static const char hextab[] = "0123456789abcdef";
 static const bool escapes[SBUFF_CHAR_CLASS] = {
 	[' '] = true,
@@ -49,18 +50,15 @@ static const bool escapes[SBUFF_CHAR_CLASS] = {
 	['\''] = true
 };
 
-/** Converts "bad" strings into ones which are safe for LDAP
+/* RFC 4515 filter assertion value special characters */
+static const char filter_specials[] = "*()\\";
+;
+
+/** Escape a string for use as an RFC 4514 DN attribute value
  *
- * @note RFC 4515 says filter strings can only use the @verbatim \<hex><hex> @endverbatim
- *	format, whereas RFC 4514 indicates that some chars in DNs, may be escaped simply
- *	with a backslash. For simplicity, we always use the hex escape sequences.
- *	In other areas where we're doing DN comparison, the DNs need to be normalised first
- *	so that they both use only hex escape sequences.
- *
- * @note This is a callback for xlat operations.
- *
- * Will escape any characters in input strings that would cause the string to be interpreted
- * as part of a DN and or filter. Escape sequence is @verbatim \<hex><hex> @endverbatim.
+ * Escapes characters that have special meaning in DNs.  Leading space and
+ * '#' are also escaped as required by RFC 4514.
+ * Escape sequence is @verbatim \<hex><hex> @endverbatim.
  *
  * @param request The current request.
  * @param out Pointer to output buffer.
@@ -68,7 +66,7 @@ static const bool escapes[SBUFF_CHAR_CLASS] = {
  * @param in Raw unescaped string.
  * @param arg Any additional arguments (unused).
  */
-size_t fr_ldap_uri_escape_func(UNUSED request_t *request, char *out, size_t outlen, char const *in, UNUSED void *arg)
+size_t fr_ldap_dn_escape_func(UNUSED request_t *request, char *out, size_t outlen, char const *in, UNUSED void *arg)
 {
 	size_t left = outlen;
 
@@ -78,7 +76,7 @@ size_t fr_ldap_uri_escape_func(UNUSED request_t *request, char *out, size_t outl
 		/*
 		 *	Encode unsafe characters.
 		 */
-		if (memchr(specials, *in, sizeof(specials) - 1)) {
+		if (memchr(dn_specials, *in, sizeof(dn_specials) - 1)) {
 		encode:
 			/*
 			 *	Only 3 or less bytes available.
@@ -108,13 +106,87 @@ size_t fr_ldap_uri_escape_func(UNUSED request_t *request, char *out, size_t outl
 	return outlen - left;
 }
 
-int fr_ldap_box_escape(fr_value_box_t *vb, UNUSED void *uctx)
+int fr_ldap_dn_box_escape(fr_value_box_t *vb, UNUSED void *uctx)
 {
 	fr_sbuff_t		sbuff;
 	fr_sbuff_uctx_talloc_t 	sbuff_ctx;
 	size_t			len;
 
-	fr_assert(!fr_value_box_is_safe_for(vb, fr_ldap_box_escape));
+	fr_assert(!fr_value_box_is_safe_for(vb, fr_ldap_dn_box_escape));
+
+	if ((vb->type != FR_TYPE_STRING) && (fr_value_box_cast_in_place(vb, vb, FR_TYPE_STRING, NULL) < 0)) {
+		return -1;
+	}
+
+	if (!fr_sbuff_init_talloc(vb, &sbuff, &sbuff_ctx, vb->vb_length * 3, vb->vb_length * 3)) {
+		fr_strerror_printf_push("Failed to allocate buffer for escaped DN");
+		return -1;
+	}
+
+	len = fr_ldap_dn_escape_func(NULL, fr_sbuff_buff(&sbuff), vb->vb_length * 3 + 1, vb->vb_strvalue, NULL);
+
+	/*
+	 *	If the returned length is unchanged, the value was already safe
+	 */
+	if (len == vb->vb_length) {
+		talloc_free(fr_sbuff_buff(&sbuff));
+	} else {
+		fr_sbuff_trim_talloc(&sbuff, len);
+		fr_value_box_strdup_shallow_replace(vb, fr_sbuff_buff(&sbuff), len);
+	}
+
+	return 0;
+}
+
+/** Escape a string for use as an RFC 4515 filter assertion value
+ *
+ * Escapes only the characters that MUST be escaped in filter assertion values
+ * per RFC 4515: '*', '(', ')', '\'.  Other characters (including ',', '+',
+ * '=') must NOT be escaped -- some LDAP implementations do not decode
+ * non-required \HH sequences in assertion values and will fail to match.
+ * Escape sequence is @verbatim \<hex><hex> @endverbatim.
+ *
+ * @param request The current request.
+ * @param out Pointer to output buffer.
+ * @param outlen Size of the output buffer.
+ * @param in Raw unescaped string.
+ * @param arg Any additional arguments (unused).
+ */
+size_t fr_ldap_filter_escape_func(UNUSED request_t *request, char *out, size_t outlen, char const *in, UNUSED void *arg)
+{
+	size_t left = outlen;
+
+	while (*in) {
+		if (memchr(filter_specials, *in, sizeof(filter_specials) - 1)) {
+			if (left <= 3) break;
+
+			*out++ = '\\';
+			*out++ = hextab[(*in >> 4) & 0x0f];
+			*out++ = hextab[*in & 0x0f];
+			in++;
+			left -= 3;
+
+			continue;
+		}
+
+		if (left <= 1) break;
+
+		*out++ = *in++;
+		left--;
+	}
+
+	*out = '\0';
+
+	return outlen - left;
+}
+
+int fr_ldap_filter_box_escape(fr_value_box_t *vb, UNUSED void *uctx)
+{
+	fr_sbuff_t		sbuff;
+	fr_sbuff_uctx_talloc_t	sbuff_ctx;
+	size_t			len;
+
+	fr_assert(!fr_value_box_is_safe_for(vb, fr_ldap_filter_box_escape));
 
 	if ((vb->type != FR_TYPE_STRING) && (fr_value_box_cast_in_place(vb, vb, FR_TYPE_STRING, NULL) < 0)) {
 		return -1;
@@ -125,11 +197,8 @@ int fr_ldap_box_escape(fr_value_box_t *vb, UNUSED void *uctx)
 		return -1;
 	}
 
-	len = fr_ldap_uri_escape_func(NULL, fr_sbuff_buff(&sbuff), vb->vb_length * 3 + 1, vb->vb_strvalue, NULL);
+	len = fr_ldap_filter_escape_func(NULL, fr_sbuff_buff(&sbuff), vb->vb_length * 3 + 1, vb->vb_strvalue, NULL);
 
-	/*
-	 *	If the returned length is unchanged, the value was already safe
-	 */
 	if (len == vb->vb_length) {
 		talloc_free(fr_sbuff_buff(&sbuff));
 	} else {
@@ -174,7 +243,7 @@ size_t fr_ldap_uri_unescape_func(UNUSED request_t *request, char *out, size_t ou
 		p++;
 
 		/* It's an escaped special, just remove the slash */
-		if (memchr(specials, *p, sizeof(specials) - 1)) {
+		if (memchr(dn_specials, *p, sizeof(dn_specials) - 1)) {
 			*out++ = *p++;
 			continue;
 		}

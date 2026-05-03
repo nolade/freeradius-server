@@ -823,11 +823,18 @@ Retrieve a value from an LDAP directory using an LDAP uri.
 If the LDAP uri starts `ldap:///`, i.e. no host is specified, then
 the server configured for the module will be used.
 
-.Example
+When embedding user-controlled values in the filter part of the URI, wrap them with
+`%ldap.filter.escape(...)`.  When embedding values in the DN part (base DN, or a DN
+being looked up), wrap them with `%ldap.dn.escape(...)`.  Inserting unescaped user
+input allows LDAP injection attacks.
+
+.Example - safe filter embedding
 
 [source,unlang]
 ----
-reply.Reply-Message := "Welcome %ldap("ldap:///ou=people,dc=example,dc=com?displayName?sub?(uid=%{User-Name})")"
+#  User-Name is filter-escaped before being embedded in the search filter.
+#  Without escaping, a User-Name of '*' would produce (uid=*) and match all users.
+reply.Reply-Message := "Welcome %ldap("ldap:///ou=people,dc=example,dc=com?displayName?sub?(uid=%ldap.filter.escape(%{User-Name}))")"
 ----
 
 .Output
@@ -835,10 +842,21 @@ reply.Reply-Message := "Welcome %ldap("ldap:///ou=people,dc=example,dc=com?displ
 "Welcome Example User"
 ```
 
-=== %ldap.uri.escape(...)
+.Example - safe DN embedding
 
-Escape a string for use in an LDAP filter or DN.  The value will then be marked as safe for use
-in LDAP URIs and DNs, and will not be escaped or modified.
+[source,unlang]
+----
+#  User-Name is DN-escaped before being used in the base DN.
+#  Without escaping, a value containing ',' could add extra DN components.
+result := %ldap("ldap:///ou=%ldap.dn.escape(%{User-Name}),dc=example,dc=com?cn?base")
+----
+
+=== %ldap.dn.escape(...)
+
+Escape a string for use in an LDAP distinguished name (RFC 4514).  Characters that are
+special in a DN component (`,`, `+`, `"`, `\`, `<`, `>`, `;`, `*`, `=`, `(`, `)`) are
+converted to `\HH` hex sequences.  The result is marked safe for DN positions and will not
+be re-escaped.
 
 .Return: _string_
 
@@ -846,21 +864,21 @@ in LDAP URIs and DNs, and will not be escaped or modified.
 
 [source,unlang]
 ----
-my-string := "ldap:///ou=profiles,dc=example,dc=com??sub?(objectClass=radiusprofile)"
-reply.Reply-Message := "The LDAP url is %ldap.uri.escape(%{my-string}}"
+my-string := "cn=admin,dc=example,dc=com"
+reply.Reply-Message := "Escaped: %ldap.dn.escape(%{my-string})"
 ----
 
 .Output
 
 ```
-"The LDAP url is ldap:///ou=profiles,dc=example,dc=com??sub?\28objectClass=radiusprofile\29"
+"Escaped: cn\3dadmin\2cdc\3dexample\2cdc\3dcom"
 ```
 
-=== %ldap.uri.safe(...)
+=== %ldap.dn.safe(...)
 
-Mark a string as safe for use in an LDAP filter or DN.  Values marked as safe for use in LDAP
-URIs will not be escaped or modified, and will be allowed in places where dynamic values are
-usually prohibited.
+Mark a string as already safe for use in an LDAP DN.  The value will not be escaped or
+modified, and will be allowed in places where dynamic values are usually prohibited.
+Use this only for strings you have constructed or validated yourself.
 
 .Return: _string_
 
@@ -871,9 +889,9 @@ usually prohibited.
 my-int := "%ldap.profile(ldap://%ldap.uri.safe(%{LDAP-Host}):%ldap.uri.safe(%{LDAP-Port})/ou=profiles,dc=example,dc=com??sub?(objectClass=radiusprofile)"
 ----
 
-=== %ldap.uri.unescape(...)
+=== %ldap.dn.unescape(...)
 
-Unescape a string for use in an LDAP filter or DN.
+Decode `\HH` hex sequences in an LDAP DN string back to their original characters.
 
 .Return: _string_
 
@@ -881,15 +899,58 @@ Unescape a string for use in an LDAP filter or DN.
 
 [source,unlang]
 ----
-my-string := "ldap:///ou=profiles,dc=example,dc=com??sub?\28objectClass=radiusprofile\29"
-reply.Reply-Message := "The LDAP url is %ldap.uri.unescape(%{my-string})"
+my-string := "cn\3dadmin\2cdc\3dexample\2cdc\3dcom"
+reply.Reply-Message := "Unescaped: %ldap.dn.unescape(%{my-string})"
 ----
 
 .Output
 
 ```
-"The LDAP url is ldap:///ou=profiles,dc=example,dc=com??sub?(objectClass=radiusprofile)"
+"Unescaped: cn=admin,dc=example,dc=com"
 ```
+
+=== %ldap.filter.escape(...)
+
+Escape a string for use as an assertion value in an LDAP search filter (RFC 4515).
+Only the characters that are special in a filter assertion value are escaped:
+`*`, `(`, `)`, `\`, and NUL.  Characters such as `=`, `+`, and `,` are intentionally
+left unescaped because OpenLDAP does not decode non-required `\HH` sequences, so
+escaping them would cause silent match failures for usernames that legitimately contain
+those characters.
+
+Use this function -- not `%ldap.dn.escape` -- when inserting user-controlled values
+into the filter part of an LDAP URI or search string.
+
+.Return: _string_
+
+.Example
+
+[source,unlang]
+----
+#  Safely embed User-Name in a search filter.
+#  A payload like '*' would otherwise produce (uid=*), matching every user.
+result := %ldap("ldap:///ou=people,dc=example,dc=com?cn?sub?(uid=%ldap.filter.escape(%{User-Name}))")
+----
+
+=== %ldap.filter.safe(...)
+
+Mark a string as already safe for use in an LDAP filter assertion value.  The value will
+not be escaped or modified.  Use this only for strings you have constructed or validated
+yourself.
+
+.Return: _string_
+
+=== %ldap.filter.unescape(...)
+
+Decode `\HH` hex sequences in an LDAP filter assertion value back to their original
+characters.
+
+.Return: _string_
+
+=== %ldap.uri.escape(...), %ldap.uri.safe(...), %ldap.uri.unescape(...)
+
+Aliases for `%ldap.dn.escape`, `%ldap.dn.safe`, and `%ldap.dn.unescape` respectively.
+Retained for backwards compatibility.  Prefer the `ldap.dn.*` names in new configs.
 
 === %ldap.uri.attr_option(...)
 

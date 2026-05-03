@@ -940,6 +940,15 @@ yourself.
 
 .Return: _string_
 
+.Example
+
+[source,unlang]
+----
+#  A filter fragment built in policy code, known to be safe.
+my-filter := "(objectClass=radiusprofile)"
+result := %ldap("ldap:///ou=profiles,dc=example,dc=com?cn?sub?%ldap.filter.safe(%{my-filter})")
+----
+
 === %ldap.filter.unescape(...)
 
 Decode `\HH` hex sequences in an LDAP filter assertion value back to their original
@@ -947,10 +956,76 @@ characters.
 
 .Return: _string_
 
-=== %ldap.uri.escape(...), %ldap.uri.safe(...), %ldap.uri.unescape(...)
+.Example
 
-Aliases for `%ldap.dn.escape`, `%ldap.dn.safe`, and `%ldap.dn.unescape` respectively.
-Retained for backwards compatibility.  Prefer the `ldap.dn.*` names in new configs.
+[source,unlang]
+----
+my-string := "john\29\28uid=\2a"
+reply.Reply-Message := "Unescaped: %ldap.filter.unescape(%{my-string})"
+----
+
+.Output
+
+```
+"Unescaped: john)(uid=*"
+```
+
+=== %ldap.uri.escape(...)
+
+Escape a string for safe embedding in an LDAP URI.  Special URI characters are
+converted to `\HH` hex sequences so that user-supplied values cannot alter the
+structure of the URI.
+
+.Return: _string_
+
+.Example
+
+[source,unlang]
+----
+my-string := "ldap:///ou=profiles,dc=example,dc=com??sub?(objectClass=radiusprofile)"
+reply.Reply-Message := "Escaped: %ldap.uri.escape(%{my-string})"
+----
+
+.Output
+
+```
+"Escaped: ldap\3a\2f\2fou\3dprofiles\2cdc\3dexample\2cdc\3dcom\3f\3fsub\3f\28objectClass\3dradiusprofile\29"
+```
+
+=== %ldap.uri.safe(...)
+
+Mark a string as already safe for use in an LDAP URI.  The value will not be escaped or
+modified.  Use this for URI components (host, port, path) that you have already
+validated or constructed yourself.
+
+.Return: _string_
+
+.Example
+
+[source,unlang]
+----
+my-int := "%ldap.profile(ldap://%ldap.uri.safe(%{LDAP-Host}):%ldap.uri.safe(%{LDAP-Port})/ou=profiles,dc=example,dc=com??sub?(objectClass=radiusprofile)"
+----
+
+=== %ldap.uri.unescape(...)
+
+Decode `\HH` hex sequences in an LDAP URI string back to their original characters.
+
+.Return: _string_
+
+.Example
+
+[source,unlang]
+----
+my-string := "ldap\3a\2f\2fou\3dprofiles\2cdc\3dexample\2cdc\3dcom\3f\3fsub\3f\28objectClass\3dradiusprofile\29"
+reply.Reply-Message := "Unescaped: %ldap.uri.unescape(%{my-string})"
+----
+
+.Output
+
+```
+"Unescaped: ldap:///ou=profiles,dc=example,dc=com??sub?(objectClass=radiusprofile)"
+```
 
 === %ldap.uri.attr_option(...)
 

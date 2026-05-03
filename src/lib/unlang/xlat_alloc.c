@@ -166,7 +166,7 @@ static xlat_exp_t *xlat_exp_alloc_pool(NDEBUG_LOCATION_ARGS TALLOC_CTX *ctx, uns
 {
 	xlat_exp_t *node;
 
-	MEM(node = talloc_zero_pooled_object(ctx, xlat_exp_t, extra_hdrs, extra));
+	MEM(node = talloc_zero_pooled_object(ctx, xlat_exp_t, extra_hdrs, sizeof(xlat_exp_t) + extra * extra_hdrs));
 	node->flags = XLAT_FLAGS_INIT;
 	node->quote = T_BARE_WORD;
 #ifndef NDEBUG

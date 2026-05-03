@@ -29,9 +29,17 @@ runs:
           software-properties-common \
           wget
 
-    - name: Set up Toolchain repository
-      shell: bash
-      run: sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+    #
+    #  ubuntu-toolchain-r/test PPA intentionally omitted.
+    #  gcc-13 and gcc-14 are both in Ubuntu 24.04 (Noble) universe.
+    #  gcc-15 is only in Ubuntu 25.04; no public mirror of this PPA exists.
+    #  Launchpad PPA infrastructure has no geo mirrors and is a recurring
+    #  point of failure.  Re-add only if a gcc_ver is needed that is not
+    #  yet in Noble.
+    #
+    #- name: Set up Toolchain repository
+    #  shell: bash
+    #  run: sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 
     - name: Update repositories
       shell: bash

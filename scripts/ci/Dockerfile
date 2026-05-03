@@ -7,6 +7,14 @@ ARG openssl_ver=3.0.2
 ENV DEBIAN_FRONTEND=noninteractive
 
 #
+#  Add country-based mirrors for the Ubuntu base archive so apt tries
+#  nearby mirrors before falling back to the primary.  Run before the
+#  first apt-get update so every subsequent install benefits.
+#
+COPY scripts/ci/ubuntu-mirrors-setup.sh /tmp/ubuntu-mirrors-setup.sh
+RUN bash /tmp/ubuntu-mirrors-setup.sh
+
+#
 #  Refresh APT lists and ensure up-to-date
 #
 RUN apt-get update && \
@@ -35,9 +43,23 @@ RUN apt-get install -y --no-install-recommends \
 	wget
 
 #
-#  Set up Ubuntu toolchain repo
+#  Ubuntu toolchain PPA (ppa:ubuntu-toolchain-r/test) is intentionally omitted.
+#  gcc-14 and gcc-13 are both in Ubuntu 24.04 (Noble) universe, so the PPA adds
+#  nothing for those versions.  gcc-15 is only in Ubuntu 25.04 (plucky) and has
+#  not been backported; no public mirror of this PPA exists.  If gcc-15 support
+#  is needed, bump the base image to 25.04 or build GCC from source.
 #
-RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test
+#  Uncomment if a future gcc_ver requires a version not yet in Noble:
+#RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test
+
+#
+#  Set up LLVM apt repo (authoritative source for Clang/LLVM releases)
+#
+RUN curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key \
+		| gpg --dearmor > /usr/share/keyrings/llvm.gpg && \
+	RELEASE=$(lsb_release -cs) && \
+	echo "deb [signed-by=/usr/share/keyrings/llvm.gpg] http://apt.llvm.org/${RELEASE}/ llvm-toolchain-${RELEASE}-${llvm_ver} main" \
+		> /etc/apt/sources.list.d/llvm.list
 
 #
 #  Set up Network RADIUS repo
@@ -113,14 +135,7 @@ RUN apt-get install -yd --no-install-recommends \
 #
 #  Extra installs for the CI testing stage
 #
-RUN mkdir -p /etc/apt/keyrings && \
-	curl -sS -o /etc/apt/keyrings/openresty.asc \
-	https://openresty.org/package/pubkey.gpg
-
-RUN RELEASE=$(lsb_release -cs) && \
-	echo "deb [signed-by=/etc/apt/keyrings/openresty.asc] http://openresty.org/package/ubuntu $(lsb_release -sc) main" \
-		> /etc/apt/sources.list.d/openresty.list && \
-	apt-get update
+RUN apt-get update
 
 RUN echo "samba-common samba-common/workgroup string WORKGROUP" | debconf-set-selections && \
 	echo "samba-common samba-common/dhcp boolean false" | debconf-set-selections && \
@@ -136,8 +151,10 @@ RUN apt-get install -y --no-install-recommends \
 	iputils-ping \
 	krb5-user \
 	ldap-utils \
+	libnginx-mod-http-lua \
+	lua-cjson \
 	mariadb-client \
-	openresty \
+	nginx \
 	postgresql-client \
 	redis-server \
 	redis-tools \

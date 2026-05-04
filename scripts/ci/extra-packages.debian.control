@@ -9,9 +9,9 @@ Build-Depends:
   libgoogle-perftools-dev,
   libidn11-dev,
   libjson-perl,
-  libluajit-5.1-dev,
+  libluajit2-5.1-dev,
   libnl-genl-3-dev,
   libsnmp-dev,
   libunbound-dev,
-  luajit,
+  luajit2,
   python3-pip

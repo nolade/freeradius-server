@@ -36,17 +36,6 @@ runs:
       if: ${{ runner.os != 'macOS' }}
       shell: bash
       run: |
-        #
-        #  Ubuntu released dfsg-1build1 rebuilds of all luajit binary packages
-        #  (libluajit-5.1-2, libluajit-5.1-common, libluajit-5.1-dev, luajit) as
-        #  no-changes security rebuilds.  luajit and libluajit-5.1-dev carry strict
-        #  (= dfsg-1) deps on both libluajit-5.1-2 and libluajit-5.1-common, so
-        #  full-upgrade removing any one of them breaks the others.  Pin the entire
-        #  source-package set to dfsg-1.  Remove once Ubuntu ships a coherent build1
-        #  for all four packages.
-        #
-        printf 'Package: libluajit-5.1-*\nPin: version 2.1.0+git20231223.c525bcb+dfsg-1\nPin-Priority: 1001\n\nPackage: luajit\nPin: version 2.1.0+git20231223.c525bcb+dfsg-1\nPin-Priority: 1001\n' \
-          | sudo tee /etc/apt/preferences.d/luajit-pin > /dev/null
         sudo apt-get update
         sudo apt-get -y full-upgrade
 

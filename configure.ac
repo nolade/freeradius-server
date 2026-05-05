@@ -1820,6 +1820,7 @@ AC_CHECK_FUNCS( \
   mkdirat \
   openat \
   pthread_sigmask \
+  pthread_setname_np \
   recvmmsg \
   sendmmsg \
   setlinebuf \

@@ -114,18 +114,18 @@ static int _tree_free(fr_rb_tree_t *tree)
 	 */
 	if ((tree->root != NIL) && tree->data_free) free_walker(tree, tree->root);
 
-#ifndef NDEBUG
-	tree->magic = 0;
-#endif
-	tree->root = NIL;
-	tree->num_elements = 0;
-
 	/*
 	 *	Ensure all dependents on the tree run their
 	 *	destructors.  The tree at this point should
 	 *	and any tree operations should be empty.
 	 */
 	talloc_free_children(tree);
+
+#ifndef NDEBUG
+	tree->magic = 0;
+#endif
+	tree->root = NIL;
+	tree->num_elements = 0;
 
 	return 0;
 }

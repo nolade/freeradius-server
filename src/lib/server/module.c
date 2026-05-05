@@ -1504,8 +1504,20 @@ static int _module_instance_free(module_instance_t *mi)
 		return -1;
 	}
 
-	if (fr_rb_node_inline_in_tree(&mi->name_node) && !fr_cond_assert(fr_rb_delete(ml->name_tree, mi))) return 1;
-	if (fr_rb_node_inline_in_tree(&mi->data_node) && !fr_cond_assert(fr_rb_delete(ml->data_tree, mi))) return 1;
+	/*
+	 *	If the tree is being freed, then we don't try to remove ourselves from it.  Doing so would
+	 *	free this node, and therefore corrupt the tree.
+	 *
+	 *	The talloc code will take care of cleaning up the children and events when this chunk is
+	 *	freed.
+	 */
+	if (!ml->name_tree->being_freed) {
+		if (fr_rb_node_inline_in_tree(&mi->name_node) && !fr_cond_assert(fr_rb_delete(ml->name_tree, mi))) return 1;
+	}
+
+	if (!ml->data_tree->being_freed) {
+		if (fr_rb_node_inline_in_tree(&mi->data_node) && !fr_cond_assert(fr_rb_delete(ml->data_tree, mi))) return 1;
+	}
 	if (ml->type->data_del) ml->type->data_del(mi);
 
 	/*

@@ -194,7 +194,9 @@ static int _rc_request_free(rc_request_t *request)
 {
 	rc_request_list_remove(&rc_request_list, request);
 
-	if (do_coa) (void) fr_rb_delete_by_inline_node(coa_tree, &request->node);
+	if (do_coa && fr_rb_node_inline_in_tree(&request->node) && !coa_tree->being_freed) {
+		(void) fr_rb_delete_by_inline_node(coa_tree, &request->node);
+	}
 
 	return 0;
 }

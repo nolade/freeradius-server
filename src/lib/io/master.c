@@ -187,6 +187,16 @@ static int track_free(fr_io_track_t *track)
 static int track_dedup_free(fr_io_track_t *track)
 {
 	fr_assert(track->client->table != NULL);
+
+	/*
+	 *	If the tree is being freed, then we don't try to remove ourselves from it.  Doing so would
+	 *	free this node, and therefore corrupt the tree.
+	 *
+	 *	The talloc code will take care of cleaning up the children and events when this chunk is
+	 *	freed.
+	 */
+	if (track->client->table->being_freed) return 0;
+
 	fr_assert(fr_rb_find(track->client->table, track) != NULL);
 
 	if (!fr_rb_delete(track->client->table, track)) {
@@ -1103,12 +1113,12 @@ static fr_io_track_t *fr_io_track_add(fr_listen_t const *li, fr_io_client_t *cli
 	 *	there are no duplicates, so this is fine.
 	 */
 	if (client->connection) {
-		MEM(track = talloc_zero_pooled_object(client, fr_io_track_t, 1, sizeof(*track) + 64));
+		MEM(track = talloc_zero_pooled_object(client->table, fr_io_track_t, 1, sizeof(*track) + 64));
 		track->address = client->connection->address;
 	} else {
 		fr_io_address_t *my_address;
 
-		MEM(track = talloc_zero_pooled_object(client, fr_io_track_t, 1, sizeof(*track) + sizeof(*track->address) + 64));
+		MEM(track = talloc_zero_pooled_object(client->table, fr_io_track_t, 1, sizeof(*track) + sizeof(*track->address) + 64));
 		MEM(track->address = my_address = talloc(track, fr_io_address_t));
 
 		*my_address = *address;
@@ -3344,7 +3354,7 @@ fr_io_track_t *fr_master_io_track_alloc(fr_listen_t *li, fr_client_t *radclient,
 		MEM(client = client_alloc(thread, PR_CLIENT_STATIC, inst, thread, radclient, NULL));
 	}
 
-	MEM(track = talloc_zero_pooled_object(client, fr_io_track_t, 1, sizeof(*track) + sizeof(*track->address) + 64));
+	MEM(track = talloc_zero_pooled_object(client->table, fr_io_track_t, 1, sizeof(*track) + sizeof(*track->address) + 64));
 	MEM(track->address = address = talloc_zero(track, fr_io_address_t));
 
 	track->li = li;

@@ -1634,13 +1634,7 @@ fr_token_t cf_pair_value_quote(CONF_PAIR const *pair)
  */
 static int _cd_free(CONF_DATA *cd)
 {
-	void *to_free;
-
-	memcpy(&to_free, &cd->data, sizeof(to_free));
-
-	if (cd->free) talloc_decrease_ref_count(to_free);	/* Also works OK for non-reference counted chunks */
-
-	return 0;
+	return talloc_free(UNCONST(void *, cd->data));
 }
 
 /** Allocate a new user data container
@@ -1674,10 +1668,7 @@ static CONF_DATA *cf_data_alloc(CONF_ITEM *parent, void const *data, char const 
 	}
 	if (name) cd->name = talloc_strdup(cd, name);
 
-	if (do_free) {
-		cd->free = true;
-		talloc_set_destructor(cd, _cd_free);
-	}
+	if (do_free) talloc_set_destructor(cd, _cd_free);
 
 	cf_item_add(parent, cd);
 	return cd;
@@ -2309,7 +2300,6 @@ void _cf_item_debug(CONF_ITEM const *ci)
 		DEBUG("  type          : %s", cd->type);
 		DEBUG("  name          : %s", cd->name);
 		DEBUG("  data          : %p", cd->data);
-		DEBUG("  free wth prnt : %s", cd->free ? "yes" : "no");
 	}
 		break;
 

@@ -130,7 +130,6 @@ struct cf_data {
 
 	void const   		*data;		//!< User data.
 	bool			is_talloced;	//!< If true we can do extra checks.
-	bool			free;		//!< If true, free data with talloc if parent node is freed.
 };
 
 typedef struct {

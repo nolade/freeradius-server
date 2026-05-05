@@ -2233,11 +2233,10 @@ int unlang_compile(virtual_server_t const *vs,
 	if (DEBUG_ENABLED4) unlang_dump(c, 2);
 
 	/*
-	 *	Associate the unlang with the configuration section,
-	 *	and free the unlang code when the configuration
-	 *	section is freed.
+	 *	Associate the unlang_t with the configuration section.
+	 *	It's already parented from "cs", so don't free it.
 	 */
-	cf_data_add(cs, c, NULL, true);
+	cf_data_add(cs, c, NULL, false);
 	cf_item_mark_parsed(cs);
 	if (instruction) *instruction = c;
 

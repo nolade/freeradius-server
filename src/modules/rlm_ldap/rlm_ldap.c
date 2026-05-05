@@ -181,27 +181,30 @@ static const conf_parser_t module_config[] = {
 	CONF_PARSER_TERMINATOR
 };
 
+#define LDAP_DN_SAFE_FOR (fr_value_box_safe_for_t)fr_ldap_dn_escape_func
+#define LDAP_FILTER_SAFE_FOR (fr_value_box_safe_for_t)fr_ldap_filter_escape_func
+
 #define LDAP_DN_CALL_ENV_ESCAPE \
 	.pair.escape = { \
 		.box_escape = { \
 			.func = fr_ldap_dn_box_escape, \
-			.safe_for = (fr_value_box_safe_for_t)fr_ldap_dn_box_escape, \
+			.safe_for = LDAP_DN_SAFE_FOR, \
 			.always_escape = false, \
 		}, \
 		.mode = TMPL_ESCAPE_PRE_CONCAT \
 	}, \
-	.pair.literals_safe_for = (fr_value_box_safe_for_t)fr_ldap_dn_box_escape
+	.pair.literals_safe_for = LDAP_DN_SAFE_FOR
 
 #define LDAP_FILTER_CALL_ENV_ESCAPE \
 	.pair.escape = { \
 		.box_escape = { \
 			.func = fr_ldap_filter_box_escape, \
-			.safe_for = (fr_value_box_safe_for_t)fr_ldap_filter_box_escape, \
+			.safe_for = LDAP_FILTER_SAFE_FOR, \
 			.always_escape = false, \
 		}, \
 		.mode = TMPL_ESCAPE_PRE_CONCAT \
 	}, \
-	.pair.literals_safe_for = (fr_value_box_safe_for_t)fr_ldap_filter_box_escape
+	.pair.literals_safe_for = LDAP_FILTER_SAFE_FOR
 
 #define USER_CALL_ENV_COMMON(_struct) \
 	{ FR_CALL_ENV_OFFSET("base_dn", FR_TYPE_STRING, CALL_ENV_FLAG_REQUIRED | CALL_ENV_FLAG_CONCAT, _struct, user_base), \
@@ -408,11 +411,6 @@ static fr_table_num_sorted_t const ldap_uri_scheme_table[] = {
 	{ L("ldaps://"),        LDAP_SCHEME_TCP_SSL	},
 };
 static size_t ldap_uri_scheme_table_len = NUM_ELEMENTS(ldap_uri_scheme_table);
-
-/** This is the common function that actually ends up doing all the URI escaping
- */
-#define LDAP_DN_SAFE_FOR (fr_value_box_safe_for_t)fr_ldap_dn_escape_func
-#define LDAP_FILTER_SAFE_FOR (fr_value_box_safe_for_t)fr_ldap_filter_escape_func
 
 static xlat_arg_parser_t const ldap_escape_xlat_arg[] = {
 	{ .required=true, .type = FR_TYPE_STRING },

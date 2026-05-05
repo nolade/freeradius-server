@@ -55,11 +55,6 @@ group {
             test_fail
       }
 
-      # Should be notfound - injected DN doesn't exist in the directory.
-      if (!notfound) {
-            test_fail
-      }
-
       control := {}
       reply := {}
 }

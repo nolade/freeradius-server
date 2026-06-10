@@ -541,6 +541,11 @@ static ssize_t encode_value(fr_dbuff_t *dbuff,
 	}
 
 	/*
+	 *	We don't encode encrypted attributes in foreign protocols.
+	 */
+	if (packet_ctx->foreign && (fr_radius_flag_encrypted(da) != RADIUS_FLAG_ENCRYPT_NONE)) goto return_0;
+
+	/*
 	 *	Encrypt the various password styles
 	 *
 	 *	Attributes with encrypted values MUST be less than
@@ -565,10 +570,7 @@ static ssize_t encode_value(fr_dbuff_t *dbuff,
 		}
 
 		slen = encode_tunnel_password(&work_dbuff, &value_start, fr_dbuff_used(&value_dbuff), packet_ctx);
-		if (slen < 0) {
-			fr_strerror_printf("%s too long", vp->da->name);
-			return slen;
-		}
+		if (slen < 0) return slen;
 
 		encrypted = true;
 		break;
@@ -1478,7 +1480,7 @@ static ssize_t encode_rfc(fr_dbuff_t *dbuff, fr_da_stack_t *da_stack, unsigned i
 		 */
 		if (((fr_dict_vendor_num_by_da(da_stack->da[depth]) == 0) && (da_stack->da[depth]->attr == 0)) ||
 		    (da_stack->da[depth]->attr > UINT8_MAX)) {
-			fr_strerror_printf("%s: Called with non-standard attribute %u", __FUNCTION__, vp->da->attr);
+			(void) fr_dcursor_next(cursor);
 			return 0;
 		}
 		break;
@@ -1701,6 +1703,14 @@ ssize_t fr_radius_encode_pair(fr_dbuff_t *dbuff, fr_dcursor_t *cursor, void *enc
 	}
 
 	/*
+	 *	We didn't encode any data, continue.
+	 */
+	if (!slen) {
+		fr_assert(fr_dcursor_current(cursor) != vp);
+		return 0;
+	}
+
+	/*
 	 *	We couldn't do it, so we didn't do anything.
 	 */
 	if (fr_dcursor_current(cursor) == vp) {
@@ -1716,6 +1726,7 @@ ssize_t	fr_radius_encode_foreign(fr_dbuff_t *dbuff, fr_pair_list_t const *list)
        	fr_radius_ctx_t common_ctx = {};
 	fr_radius_encode_ctx_t encode_ctx = {
 		.common = &common_ctx,
+		.foreign = true,		/* we are being called from a foreign protocol */
 	};
 
 	/*
